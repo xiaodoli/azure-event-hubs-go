@@ -108,6 +108,14 @@ func (fp *FilePersister) Read(namespace, name, consumerGroup, partitionID string
 
 	var checkpoint Checkpoint
 	err = json.Unmarshal(buf.Bytes(), &checkpoint)
+	if err != nil {
+		bytes, err := json.Marshal(newCheckpoint)
+		if err != nil {
+			return newCheckpoint, err
+		}
+		ioutil.WriteFile(filePath, bytes, 0644)
+		return newCheckpoint, nil
+	}
 	return checkpoint, err
 }
 
