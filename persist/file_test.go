@@ -65,7 +65,9 @@ func TestFilePersister_ReadEmpty(t *testing.T) {
 		err := os.Mkdir(dir, os.ModePerm)
 		assert.Nil(t, err)
 	}
-	partitionFile := filepath.Join(dir, "hello.json")
+
+	// able to read invalid json file
+	partitionFile := filepath.Join(dir, "namespace_name_Default_0.json")
 	if _, err := os.Stat(partitionFile); err == nil {
 		err := os.Remove(partitionFile)
 		assert.Nil(t, err)
@@ -73,12 +75,45 @@ func TestFilePersister_ReadEmpty(t *testing.T) {
 	fakeJson := []byte("hello\nworld\n")
 	err := os.WriteFile(partitionFile, fakeJson, 0644)
 	assert.Nil(t, err)
-
 	persister, err := NewFilePersister(dir)
 	assert.Nil(t, err)
 	ckp, err := persister.Read(namespace, name, group, partitionID)
 	assert.Nil(t, err)
 	assert.Equal(t, NewCheckpointFromStartOfStream(), ckp)
+	if _, err := os.Stat(partitionFile); err == nil {
+		err := os.Remove(partitionFile)
+		assert.Nil(t, err)
+	}
+
+	// able to read when file doesn't exist
+	partitionFile = filepath.Join(dir, "namespace_name_Default_99.json")
+	if _, err := os.Stat(partitionFile); err == nil {
+		err := os.Remove(partitionFile)
+		assert.Nil(t, err)
+	}
+	persister, err = NewFilePersister(dir)
+	assert.Nil(t, err)
+	ckp, err = persister.Read(namespace, name, group, partitionID)
+	assert.Nil(t, err)
+	assert.Equal(t, NewCheckpointFromStartOfStream(), ckp)
+	if _, err := os.Stat(partitionFile); err == nil {
+		err := os.Remove(partitionFile)
+		assert.Nil(t, err)
+	}
+
+	// able to read file with empty content
+	fakeJson = []byte("")
+	err = os.WriteFile(partitionFile, fakeJson, 0644)
+	assert.Nil(t, err)
+	persister, err = NewFilePersister(dir)
+	assert.Nil(t, err)
+	ckp, err = persister.Read(namespace, name, group, partitionID)
+	assert.Nil(t, err)
+	assert.Equal(t, NewCheckpointFromStartOfStream(), ckp)
+	if _, err := os.Stat(partitionFile); err == nil {
+		err := os.Remove(partitionFile)
+		assert.Nil(t, err)
+	}
 }
 
 func TestFilePersister_Write(t *testing.T) {
